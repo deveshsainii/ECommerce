@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { useUserLoginMutation } from '../userapi/userapislice.jsx';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { useUserLoginMutation } from '../userapi/userapislice';
 import { toast } from 'react-toastify';
 
 const Login = () => {
@@ -9,27 +9,25 @@ const Login = () => {
   const [password, setPassword] = useState('');
 
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const { search } = useLocation();
-  const redirect = new URLSearchParams(search).get('redirect');
+  const redirect = new URLSearchParams(search).get('redirect') || '/';
 
   const [loginUser, { isLoading }] = useUserLoginMutation(); // Renamed to loginUser to avoid conflict
-  const { userInfo } = useSelector(state => state.auth); // Destructure userInfo directly from state.auth
+  const userInfo = useSelector(state => state.auth.userInfo); // Correctly destructured userInfo
 
   useEffect(() => {
     if (userInfo) {
-      navigate(redirect || '/');
+      navigate(redirect);
     }
   }, [navigate, redirect, userInfo]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const result = await loginUser({ email, password }).unwrap();
-      // Dispatch your login success action here if needed
+      await loginUser({ email, password }).unwrap();
       toast.success('Logged in successfully!');
     } catch (error) {
-      toast.error(error.message || 'Failed to login.');
+      toast.error(error.data?.message || 'Failed to login.');
     }
   };
 
@@ -46,6 +44,7 @@ const Login = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
               />
             </div>
             <div className='my-[2rem]'>
@@ -55,6 +54,7 @@ const Login = () => {
                 type="password" // Correct input type for password
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
               />
             </div>
             <button
